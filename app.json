@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "EzpzCryptoPriceAlert",
+    "slug": "ezpz-crypto-price-alert",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ezpz.cryptopricealert"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.ezpz.cryptopricealert"
+    }
+  }
+}
+
