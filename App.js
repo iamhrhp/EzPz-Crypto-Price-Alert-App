@@ -1,8 +1,9 @@
 import React from 'react';
-import { Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { CurrencyProvider } from './src/utils/currencyContext';
 import HomeScreen from './src/screens/HomeScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
@@ -56,7 +57,11 @@ export default function App() {
             options={{
               tabBarLabel: 'Markets',
               tabBarIcon: ({ color, focused }) => (
-                <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.6 }}>📊</Text>
+                <MaterialCommunityIcons 
+                  name={focused ? "chart-line-stacked" : "chart-line"} 
+                  color={color} 
+                  size={24} 
+                />
               ),
             }}
           />
@@ -66,7 +71,11 @@ export default function App() {
             options={{
               tabBarLabel: 'Alerts',
               tabBarIcon: ({ color, focused }) => (
-                <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.6 }}>🔔</Text>
+                <MaterialCommunityIcons 
+                  name={focused ? "bell-plus" : "bell-plus-outline" } 
+                  color={color} 
+                  size={24} 
+                />
               ),
             }}
           />
@@ -76,7 +85,11 @@ export default function App() {
             options={{
               tabBarLabel: 'Settings',
               tabBarIcon: ({ color, focused }) => (
-                <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.6 }}>⚙️</Text>
+                <Ionicons 
+                  name={focused ? "settings" : "settings-outline"} 
+                  color={color} 
+                  size={24} 
+                />
               ),
             }}
           />
