@@ -8,11 +8,11 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { getPopularCryptos } from '../api/coinGeckoApi';
 import { formatCurrency, formatPercentage, getChangeColor } from '../utils/formatters';
 import { useCurrency } from '../utils/currencyContext';
 import { colors } from '../utils/colors';
-import BottomNavigation from '../components/BottomNavigation';
 
 export default function HomeScreen({ navigation }) {
   const { currency } = useCurrency();
@@ -44,15 +44,15 @@ export default function HomeScreen({ navigation }) {
 
   if (loading && cryptos.length === 0) {
     return (
-      <View style={styles.centerContainer}>
+      <SafeAreaView style={styles.centerContainer} edges={['top']}>
         <ActivityIndicator size="large" color={colors.binanceYellow} />
         <Text style={styles.loadingText}>Loading crypto prices...</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
         style={styles.scrollView}
         refreshControl={
@@ -110,8 +110,7 @@ export default function HomeScreen({ navigation }) {
           </TouchableOpacity>
         ))}
       </ScrollView>
-      <BottomNavigation navigation={navigation} currentRoute="Home" />
-    </View>
+    </SafeAreaView>
   );
 }
 

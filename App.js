@@ -1,50 +1,86 @@
 import React from 'react';
+import { Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
 import { CurrencyProvider } from './src/utils/currencyContext';
 import HomeScreen from './src/screens/HomeScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import AlertScreen from './src/screens/AlertScreen';
+import { colors } from './src/utils/colors';
 
-const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
 
 export default function App() {
   return (
     <CurrencyProvider>
       <NavigationContainer>
         <StatusBar style="light" />
-        <Stack.Navigator
+        <Tab.Navigator
           initialRouteName="Home"
           screenOptions={{
-            headerStyle: {
-              backgroundColor: '#0B0E11',
-              borderBottomWidth: 1,
-              borderBottomColor: '#2B3139',
+            headerShown: false,
+            tabBarStyle: {
+              backgroundColor: colors.backgroundSecondary,
+              borderTopWidth: 1,
+              borderTopColor: colors.border,
+              height: 75,
+              paddingBottom: 15,
+              paddingTop: 8,
+              elevation: 8,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: -2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 4,
             },
-            headerTintColor: '#F0B90B',
-            headerTitleStyle: {
-              fontWeight: 'bold',
-              color: '#EAECEF',
+            tabBarActiveTintColor: colors.binanceYellow,
+            tabBarInactiveTintColor: colors.textSecondary,
+            tabBarLabelStyle: {
+              fontSize: 11,
+              fontWeight: '600',
+              marginTop: 2,
+              marginBottom: 0,
+            },
+            tabBarIconStyle: {
+              marginTop: 0,
+              marginBottom: 0,
+            },
+            tabBarItemStyle: {
+              paddingVertical: 4,
             },
           }}
         >
-          <Stack.Screen 
+          <Tab.Screen 
             name="Home" 
             component={HomeScreen}
-            options={{ headerShown: false }}
+            options={{
+              tabBarLabel: 'Markets',
+              tabBarIcon: ({ color, focused }) => (
+                <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.6 }}>📊</Text>
+              ),
+            }}
           />
-          <Stack.Screen 
-            name="Settings" 
-            component={SettingsScreen}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen 
+          <Tab.Screen 
             name="Alerts" 
             component={AlertScreen}
-            options={{ headerShown: false }}
+            options={{
+              tabBarLabel: 'Alerts',
+              tabBarIcon: ({ color, focused }) => (
+                <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.6 }}>🔔</Text>
+              ),
+            }}
           />
-        </Stack.Navigator>
+          <Tab.Screen 
+            name="Settings" 
+            component={SettingsScreen}
+            options={{
+              tabBarLabel: 'Settings',
+              tabBarIcon: ({ color, focused }) => (
+                <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.6 }}>⚙️</Text>
+              ),
+            }}
+          />
+        </Tab.Navigator>
       </NavigationContainer>
     </CurrencyProvider>
   );

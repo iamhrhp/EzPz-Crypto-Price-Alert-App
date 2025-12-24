@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,11 +9,12 @@ import {
   Modal,
   FlatList,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { loadSettings, saveSettings } from '../utils/storage';
 import { useCurrency } from '../utils/currencyContext';
 import { getCurrencySymbol } from '../utils/formatters';
 import { colors } from '../utils/colors';
-import BottomNavigation from '../components/BottomNavigation';
+import { getAvailableSounds, playAlertSound } from '../utils/sound';
 
 const CURRENCIES = [
   { code: 'usd', name: 'US Dollar', symbol: '$' },
@@ -34,8 +35,10 @@ export default function SettingsScreen({ navigation }) {
     refreshInterval: 30000,
     theme: 'light',
     notifications: true,
+    alertSound: 'vibration',
   });
   const [showCurrencyModal, setShowCurrencyModal] = useState(false);
+  const [showSoundModal, setShowSoundModal] = useState(false);
 
   useEffect(() => {
     loadUserSettings();
@@ -57,8 +60,21 @@ export default function SettingsScreen({ navigation }) {
     setShowCurrencyModal(false);
   };
 
+  const handleSoundSelect = async (selectedSound) => {
+    await updateSetting('alertSound', selectedSound);
+    setShowSoundModal(false);
+    // Test the sound when user selects it
+    await playAlertSound(selectedSound);
+  };
+
+  const testSound = async (soundId) => {
+    await playAlertSound(soundId);
+  };
+
+  const availableSounds = useMemo(() => getAvailableSounds(), []);
+
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView style={styles.scrollView}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Preferences</Text>
@@ -161,8 +177,61 @@ export default function SettingsScreen({ navigation }) {
           </View>
         </View>
       </Modal>
-      <BottomNavigation navigation={navigation} currentRoute="Settings" />
-    </View>
+
+      <Modal
+        visible={showSoundModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowSoundModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Alert Sound</Text>
+              <TouchableOpacity
+                onPress={() => setShowSoundModal(false)}
+                style={styles.closeButton}
+              >
+                <Text style={styles.closeButtonText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={availableSounds}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.currencyItem,
+                    settings.alertSound === item.id && styles.currencyItemSelected,
+                  ]}
+                  onPress={() => handleSoundSelect(item.id)}
+                >
+                  <View style={styles.currencyInfo}>
+                    <Text style={styles.currencyName}>
+                      {item.name} {item.type === 'vibration' ? '📳' : '🔊'}
+                    </Text>
+                    <Text style={styles.currencyCode}>
+                      {item.type === 'vibration' ? 'Vibration Pattern' : 'Sound File'}
+                    </Text>
+                  </View>
+                  <View style={styles.currencyRight}>
+                    <TouchableOpacity
+                      style={styles.testButton}
+                      onPress={() => testSound(item.id)}
+                    >
+                      <Text style={styles.testButtonText}>Test</Text>
+                    </TouchableOpacity>
+                    {settings.alertSound === item.id && (
+                      <Text style={styles.checkmark}>✓</Text>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
   );
 }
 
@@ -324,6 +393,18 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: colors.binanceYellow,
     fontWeight: 'bold',
+  },
+  testButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: colors.binanceYellow,
+    borderRadius: 6,
+    marginRight: 8,
+  },
+  testButtonText: {
+    color: colors.background,
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
 

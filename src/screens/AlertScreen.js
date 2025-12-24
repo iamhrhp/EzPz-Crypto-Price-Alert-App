@@ -9,12 +9,12 @@ import {
   Alert,
   AppState,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { getCryptoPrice } from '../api/coinGeckoApi';
 import { loadAlerts, saveAlerts } from '../utils/storage';
 import { formatCurrency } from '../utils/formatters';
 import { useCurrency } from '../utils/currencyContext';
 import { colors } from '../utils/colors';
-import BottomNavigation from '../components/BottomNavigation';
 import { checkAlerts } from '../services/alertService';
 import { playAlertSound } from '../utils/sound';
 
@@ -50,8 +50,10 @@ export default function AlertScreen({ navigation, route }) {
     };
   }, [currency, coinId]);
 
+  // Auto-fill target price with current price whenever it's fetched
+  // User can then edit it to set their target
   useEffect(() => {
-    if (currentPrice && !targetPrice) {
+    if (currentPrice !== null) {
       setTargetPrice(currentPrice.toString());
     }
   }, [currentPrice]);
@@ -205,7 +207,7 @@ export default function AlertScreen({ navigation, route }) {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView style={styles.scrollView}>
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Create New Alert</Text>
@@ -316,8 +318,7 @@ export default function AlertScreen({ navigation, route }) {
         )}
       </View>
       </ScrollView>
-      <BottomNavigation navigation={navigation} currentRoute="Alerts" />
-    </View>
+    </SafeAreaView>
   );
 }
 
