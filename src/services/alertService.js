@@ -1,11 +1,8 @@
 import { getCryptoPrice } from '../api/coinGeckoApi';
 import { loadAlerts, saveAlerts } from '../utils/storage';
 
-/**
- * Check if any alerts have been triggered
- * @param {string} currency - Currency code
- * @returns {Promise<Array>} Array of triggered alerts
- */
+// Checks all active alerts to see if any prices hit their targets
+// Returns an array of alerts that just got triggered
 export const checkAlerts = async (currency = 'usd') => {
   try {
     const alerts = await loadAlerts();
@@ -15,10 +12,10 @@ export const checkAlerts = async (currency = 'usd') => {
       return [];
     }
 
-    // Get unique coin IDs
+    // Get all unique coin IDs we need to check
     const coinIds = [...new Set(activeAlerts.map(alert => alert.coinId))];
     
-    // Fetch current prices for all coins
+    // Fetch prices for all those coins
     const pricePromises = coinIds.map(coinId => 
       getCryptoPrice(coinId, currency).catch(err => {
         console.error(`Error fetching price for ${coinId}:`, err);
@@ -29,7 +26,7 @@ export const checkAlerts = async (currency = 'usd') => {
     const priceResults = await Promise.all(pricePromises);
     const triggeredAlerts = [];
     
-    // Check each alert
+    // Go through each alert and see if the price hit the target
     for (let i = 0; i < activeAlerts.length; i++) {
       const alert = activeAlerts[i];
       const coinIndex = coinIds.indexOf(alert.coinId);
@@ -37,10 +34,9 @@ export const checkAlerts = async (currency = 'usd') => {
       if (coinIndex !== -1 && priceResults[coinIndex] && priceResults[coinIndex][alert.coinId]) {
         const currentPrice = priceResults[coinIndex][alert.coinId][currency];
         
-        // Check if target price is reached
-        // Trigger if current price has reached or exceeded target price
+        // If current price is at or above the target, trigger the alert
         if (currentPrice >= alert.targetPrice) {
-          // Mark alert as triggered if not already
+          // Only trigger if it hasn't been triggered already
           if (!alert.triggered) {
             alert.triggered = true;
             alert.triggeredAt = new Date().toISOString();
@@ -53,7 +49,7 @@ export const checkAlerts = async (currency = 'usd') => {
       }
     }
     
-    // Save updated alerts if any were triggered
+    // Save the updated alerts back to storage
     if (triggeredAlerts.length > 0) {
       await saveAlerts(alerts);
     }
@@ -65,10 +61,8 @@ export const checkAlerts = async (currency = 'usd') => {
   }
 };
 
-/**
- * Reset triggered status for an alert
- * @param {string} alertId - Alert ID
- */
+// Resets an alert so it can trigger again
+// Useful if you want to reuse an alert after it's been triggered
 export const resetAlert = async (alertId) => {
   try {
     const alerts = await loadAlerts();

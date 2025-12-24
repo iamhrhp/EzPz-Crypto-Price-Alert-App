@@ -2,23 +2,18 @@ import { Vibration } from 'react-native';
 
 let soundObject = null;
 
-/**
- * Play alert sound
- * Uses vibration to alert the user
- */
+// Vibrates the phone when an alert triggers
+// Uses a pattern to make it feel like a ringtone
 export const playAlertSound = async () => {
   try {
-    // Play vibration pattern: vibrate, pause, vibrate, pause, vibrate
-    // This creates a "ringing" effect
+    // vibrate for 200ms, pause 100ms, repeat a few times
     Vibration.vibrate([200, 100, 200, 100, 200]);
   } catch (error) {
     console.error('Error playing alert sound:', error);
   }
 };
 
-/**
- * Stop alert sound
- */
+// Stops any ongoing vibration (not really used but here just in case)
 export const stopAlertSound = async () => {
   try {
     if (soundObject) {

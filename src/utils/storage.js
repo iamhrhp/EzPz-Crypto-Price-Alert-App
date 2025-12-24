@@ -6,10 +6,7 @@ const STORAGE_KEYS = {
   FAVORITES: '@ezpz_crypto_favorites',
 };
 
-/**
- * Save alerts to AsyncStorage
- * @param {Array} alerts - Array of alert objects
- */
+// Saves all alerts to local storage
 export const saveAlerts = async (alerts) => {
   try {
     const jsonValue = JSON.stringify(alerts);
@@ -20,10 +17,8 @@ export const saveAlerts = async (alerts) => {
   }
 };
 
-/**
- * Load alerts from AsyncStorage
- * @returns {Promise<Array>} Array of alert objects
- */
+// Loads all saved alerts from storage
+// Returns empty array if nothing is saved
 export const loadAlerts = async () => {
   try {
     const jsonValue = await AsyncStorage.getItem(STORAGE_KEYS.ALERTS);
@@ -34,10 +29,7 @@ export const loadAlerts = async () => {
   }
 };
 
-/**
- * Save settings to AsyncStorage
- * @param {Object} settings - Settings object
- */
+// Saves app settings like currency preference
 export const saveSettings = async (settings) => {
   try {
     const jsonValue = JSON.stringify(settings);
@@ -48,15 +40,12 @@ export const saveSettings = async (settings) => {
   }
 };
 
-/**
- * Load settings from AsyncStorage
- * @returns {Promise<Object>} Settings object
- */
+// Loads saved settings, returns defaults if nothing saved yet
 export const loadSettings = async () => {
   try {
     const jsonValue = await AsyncStorage.getItem(STORAGE_KEYS.SETTINGS);
     return jsonValue != null ? JSON.parse(jsonValue) : {
-      refreshInterval: 30000, // 30 seconds
+      refreshInterval: 30000, // check prices every 30 seconds
       currency: 'usd',
       theme: 'light',
     };
@@ -70,10 +59,7 @@ export const loadSettings = async () => {
   }
 };
 
-/**
- * Save favorite cryptocurrencies
- * @param {Array} favorites - Array of favorite coin IDs
- */
+// Saves the list of favorite coins
 export const saveFavorites = async (favorites) => {
   try {
     const jsonValue = JSON.stringify(favorites);
@@ -84,10 +70,8 @@ export const saveFavorites = async (favorites) => {
   }
 };
 
-/**
- * Load favorite cryptocurrencies
- * @returns {Promise<Array>} Array of favorite coin IDs
- */
+// Gets the list of favorite coins
+// Returns empty array if no favorites saved
 export const loadFavorites = async () => {
   try {
     const jsonValue = await AsyncStorage.getItem(STORAGE_KEYS.FAVORITES);

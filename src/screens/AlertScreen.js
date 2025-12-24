@@ -33,7 +33,7 @@ export default function AlertScreen({ navigation, route }) {
     fetchCurrentPrice();
     startAlertChecking();
 
-    // Listen for app state changes
+    // Check alerts when user comes back to the app
     const subscription = AppState.addEventListener('change', nextAppState => {
       if (
         appState.current.match(/inactive|background/) &&
@@ -108,7 +108,7 @@ export default function AlertScreen({ navigation, route }) {
     }
   };
 
-  // Refresh alerts periodically to show updated status
+  // Keep the alert list fresh by reloading every 5 seconds
   useEffect(() => {
     const refreshInterval = setInterval(() => {
       loadUserAlerts();
@@ -173,6 +173,8 @@ export default function AlertScreen({ navigation, route }) {
     );
   };
 
+  // Figures out how much to increment/decrement based on the price
+  // If it's 0.11, step by 0.01. If it's 88001, step by 1.
   const getStepSize = (price) => {
     if (!price) return 1;
     const priceStr = price.toString();
@@ -181,14 +183,14 @@ export default function AlertScreen({ navigation, route }) {
       const decimalPlaces = decimalPart.length;
       return Math.pow(10, -decimalPlaces);
     }
-    return 1; // Integer, step by 1
+    return 1; // whole numbers, step by 1
   };
 
   const incrementPrice = () => {
     const current = parseFloat(targetPrice) || currentPrice || 0;
     const stepSize = getStepSize(targetPrice || currentPrice);
     const newPrice = current + stepSize;
-    // Preserve decimal places from step size
+    // keep the same number of decimal places
     const decimalPlaces = stepSize.toString().split('.')[1]?.length || 0;
     setTargetPrice(newPrice.toFixed(decimalPlaces));
   };
@@ -197,7 +199,7 @@ export default function AlertScreen({ navigation, route }) {
     const current = parseFloat(targetPrice) || currentPrice || 0;
     const stepSize = getStepSize(targetPrice || currentPrice);
     const newPrice = Math.max(0, current - stepSize);
-    // Preserve decimal places from step size
+    // keep the same number of decimal places
     const decimalPlaces = stepSize.toString().split('.')[1]?.length || 0;
     setTargetPrice(newPrice.toFixed(decimalPlaces));
   };

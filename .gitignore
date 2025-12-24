@@ -22,3 +22,6 @@ web-build/
 .env
 .env.local
 
+# API Config (contains sensitive keys)
+src/config/apiConfig.js
+

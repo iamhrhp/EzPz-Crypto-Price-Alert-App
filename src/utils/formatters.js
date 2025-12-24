@@ -1,8 +1,4 @@
-/**
- * Get locale based on currency
- * @param {string} currency - Currency code
- * @returns {string} Locale string
- */
+// Maps currency codes to locale strings for proper number formatting
 const getLocaleForCurrency = (currency) => {
   const currencyMap = {
     'USD': 'en-US',
@@ -19,12 +15,8 @@ const getLocaleForCurrency = (currency) => {
   return currencyMap[currency.toUpperCase()] || 'en-US';
 };
 
-/**
- * Format currency value
- * @param {number} value - Value to format
- * @param {string} currency - Currency code (default: 'USD')
- * @returns {string} Formatted currency string
- */
+// Formats a number as currency (e.g., $1,234.56 or €1.234,56)
+// Handles different locales automatically based on currency
 export const formatCurrency = (value, currency = 'USD') => {
   if (value === null || value === undefined || isNaN(value)) {
     const symbol = getCurrencySymbol(currency);
@@ -42,11 +34,7 @@ export const formatCurrency = (value, currency = 'USD') => {
   }).format(value);
 };
 
-/**
- * Get currency symbol
- * @param {string} currency - Currency code
- * @returns {string} Currency symbol
- */
+// Returns the symbol for a currency ($, €, £, etc.)
 export const getCurrencySymbol = (currency) => {
   const symbols = {
     'USD': '$',
@@ -63,11 +51,7 @@ export const getCurrencySymbol = (currency) => {
   return symbols[currency.toUpperCase()] || '$';
 };
 
-/**
- * Format percentage change
- * @param {number} change - Percentage change value
- * @returns {string} Formatted percentage string with sign
- */
+// Formats percentage with + or - sign (e.g., +5.23% or -2.10%)
 export const formatPercentage = (change) => {
   if (change === null || change === undefined || isNaN(change)) {
     return '0.00%';
@@ -77,12 +61,8 @@ export const formatPercentage = (change) => {
   return `${sign}${change.toFixed(2)}%`;
 };
 
-/**
- * Format large numbers (market cap, volume, etc.)
- * @param {number} value - Value to format
- * @param {string} currency - Currency code (default: 'USD')
- * @returns {string} Formatted string (e.g., 1.5B, 500M)
- */
+// Shortens big numbers (1.5B instead of 1,500,000,000)
+// Useful for market cap and volume displays
 export const formatLargeNumber = (value, currency = 'USD') => {
   if (value === null || value === undefined || isNaN(value)) {
     return '0';
@@ -106,11 +86,8 @@ export const formatLargeNumber = (value, currency = 'USD') => {
   return `${symbol}${value.toFixed(2)}`;
 };
 
-/**
- * Get color based on percentage change (Binance style)
- * @param {number} change - Percentage change value
- * @returns {string} Color string (green for positive, red for negative)
- */
+// Returns green for positive changes, red for negative
+// Matches Binance's color scheme
 export const getChangeColor = (change) => {
   if (change === null || change === undefined || isNaN(change)) {
     return '#848E9C';
