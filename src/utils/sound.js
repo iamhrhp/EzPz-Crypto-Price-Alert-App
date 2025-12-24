@@ -1,4 +1,5 @@
 import { Vibration } from 'react-native';
+import { Asset } from 'expo-asset';
 import { loadSettings } from './storage';
 
 let soundObject = null;
@@ -12,33 +13,63 @@ const VIBRATION_PATTERNS = {
   'vibration-quick': [100, 50, 100, 50, 100], // quick bursts
 };
 
-// Sound file mappings (users can add their own files to assets/)
+
+
+// Default sound files bundled with the app
+// 
+// HOW TO ADD DEFAULT TONES:
+// 1. Place your sound files in the assets/ folder (e.g., assets/alert.mp3)
+// 2. Add them to SOUND_FILES below using require()
+// 3. Add a friendly name to SOUND_NAMES (optional but recommended)
+// 4. Supported formats: .mp3, .wav, .m4a, .aac
+//
+// Example:
+//   1. Add file: assets/my-alert.mp3
+//   2. Add to SOUND_FILES: 'my-alert': require('../assets/my-alert.mp3'),
+//   3. Add to SOUND_NAMES: 'my-alert': 'My Alert Tone',
+//
 const SOUND_FILES = {
-  // Add your sound files here, e.g.:
-  // 'beep': require('../assets/beep.mp3'),
-  // 'alert': require('../assets/alert.mp3'),
+  'alert-1': require('../../assets/Alert1.mp3'),
+  'alert-2': require('../../assets/Alert2.mp3'),
+  'alert-3': require('../../assets/Alert3.mp3'),
+  'alert-4': require('../../assets/Alert4.mp3'),
+  'alert-5': require('../../assets/Alert5.mp3'),
+  'alert-6': require('../../assets/Alert6.mp3'),
 };
 
-// Plays the alert sound based on user's preference
-export const playAlertSound = async (soundType = null) => {
-  try {
-    // Get user's sound preference from settings
-    let selectedSound = soundType;
-    if (!selectedSound) {
-      const settings = await loadSettings();
-      selectedSound = settings.alertSound || 'vibration';
-    }
+// Friendly display names for default sounds
+// If a sound isn't listed here, it will use a formatted version of the key name
+const SOUND_NAMES = {
+  'alert-1': 'Alert 1',
+  'alert-2': 'Alert 2',
+  'alert-3': 'Alert 3',
+  'alert-4': 'Alert 4',
+  'alert-5': 'Alert 5',
+  'alert-6': 'Alert 6',
+};
 
-    // Check if it's a vibration pattern
-    if (VIBRATION_PATTERNS[selectedSound]) {
-      Vibration.vibrate(VIBRATION_PATTERNS[selectedSound]);
+// Plays the alert sound and vibration based on user's preference
+export const playAlertSound = async (soundType = null, vibrationType = null) => {
+  try {
+    const settings = await loadSettings();
+    
+    // Get vibration pattern (always play vibration)
+    const selectedVibration = vibrationType || settings.alertVibration || 'vibration';
+    if (VIBRATION_PATTERNS[selectedVibration]) {
+      Vibration.vibrate(VIBRATION_PATTERNS[selectedVibration]);
+    }
+    
+    // Get sound file (optional - can be 'none')
+    const selectedSound = soundType || settings.alertSound || 'none';
+    
+    // If no sound selected, just return (vibration already played)
+    if (!selectedSound || selectedSound === 'none') {
       return;
     }
 
-    // Check if it's a sound file
-    if (SOUND_FILES[selectedSound]) {
+    // Check if it's a custom file URI (starts with file:// or content://)
+    if (selectedSound.startsWith('file://') || selectedSound.startsWith('content://')) {
       try {
-        // Dynamically import Audio only when needed
         const { Audio } = await import('expo-av');
         
         await Audio.requestPermissionsAsync();
@@ -52,21 +83,52 @@ export const playAlertSound = async (soundType = null) => {
           await soundObject.unloadAsync();
         }
         
-        const { sound } = await Audio.Sound.createAsync(SOUND_FILES[selectedSound], {
-          shouldPlay: true,
-          volume: 1.0,
-        });
+        const { sound } = await Audio.Sound.createAsync(
+          { uri: selectedSound },
+          { shouldPlay: true, volume: 1.0 }
+        );
         
         soundObject = sound;
-        Vibration.vibrate([200, 100, 200]); // light vibration with sound
+        // Vibration already played above, no need to vibrate again
+      } catch (soundError) {
+        console.error('Error playing custom sound file:', soundError);
+        // Vibration already played, just log error
+      }
+      return;
+    }
+
+    // Check if it's a bundled sound file
+    if (SOUND_FILES[selectedSound]) {
+      try {
+        const { Audio } = await import('expo-av');
+        
+        await Audio.requestPermissionsAsync();
+        await Audio.setAudioModeAsync({
+          playsInSilentModeIOS: true,
+          staysActiveInBackground: true,
+          shouldDuckAndroid: true,
+        });
+
+        if (soundObject) {
+          await soundObject.unloadAsync();
+        }
+        
+        // Use Asset.fromModule to properly resolve the audio file
+        const assetModule = SOUND_FILES[selectedSound];
+        const asset = Asset.fromModule(assetModule);
+        await asset.downloadAsync();
+        
+        const { sound } = await Audio.Sound.createAsync(
+          { uri: asset.localUri || asset.uri },
+          { shouldPlay: true, volume: 1.0 }
+        );
+        
+        soundObject = sound;
+        // Vibration already played above, no need to vibrate again
       } catch (soundError) {
         console.error('Error playing sound file:', soundError);
-        // Fallback to default vibration
-        Vibration.vibrate(VIBRATION_PATTERNS['vibration']);
+        // Vibration already played, just log error
       }
-    } else {
-      // Default fallback
-      Vibration.vibrate(VIBRATION_PATTERNS['vibration']);
     }
   } catch (error) {
     console.error('Error playing alert sound:', error);
@@ -74,30 +136,39 @@ export const playAlertSound = async (soundType = null) => {
   }
 };
 
-// Get list of available sound options for the settings screen
-export const getAvailableSounds = () => {
+// Get list of available vibration patterns
+export const getAvailableVibrations = () => {
   try {
-    const vibrationOptions = Object.keys(VIBRATION_PATTERNS || {}).map(key => ({
+    return Object.keys(VIBRATION_PATTERNS || {}).map(key => ({
       id: key,
       name: key.replace('vibration-', '').replace('vibration', 'Default Vibration'),
       type: 'vibration',
     }));
-
-    const soundOptions = Object.keys(SOUND_FILES || {}).map(key => ({
-      id: key,
-      name: key.charAt(0).toUpperCase() + key.slice(1),
-      type: 'sound',
-    }));
-
-    return [...vibrationOptions, ...soundOptions];
   } catch (error) {
-    console.error('Error getting available sounds:', error);
-    // Return at least the default vibration option
+    console.error('Error getting available vibrations:', error);
     return [{
       id: 'vibration',
       name: 'Default Vibration',
       type: 'vibration',
     }];
+  }
+};
+
+// Get list of available sound files
+export const getAvailableSounds = () => {
+  try {
+    const soundOptions = Object.keys(SOUND_FILES || {}).map(key => ({
+      id: key,
+      name: SOUND_NAMES[key] || key.split('-').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join(' '),
+      type: 'sound',
+    }));
+
+    return soundOptions;
+  } catch (error) {
+    console.error('Error getting available sounds:', error);
+    return [];
   }
 };
 

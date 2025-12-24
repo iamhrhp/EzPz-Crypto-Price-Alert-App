@@ -1,4 +1,6 @@
+import 'react-native-gesture-handler';
 import React from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
@@ -14,8 +16,9 @@ const Tab = createBottomTabNavigator();
 
 export default function App() {
   return (
-    <CurrencyProvider>
-      <NavigationContainer>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <CurrencyProvider>
+        <NavigationContainer>
         <StatusBar style="light" />
         <Tab.Navigator
           initialRouteName="Home"
@@ -96,6 +99,7 @@ export default function App() {
         </Tab.Navigator>
       </NavigationContainer>
     </CurrencyProvider>
+    </GestureHandlerRootView>
   );
 }
 

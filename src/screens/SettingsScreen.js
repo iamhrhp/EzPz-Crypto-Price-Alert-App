@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,13 +8,16 @@ import {
   TouchableOpacity,
   Modal,
   FlatList,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import BottomSheet, { BottomSheetFlatList } from '@gorhom/bottom-sheet';
+import * as DocumentPicker from 'expo-document-picker';
 import { loadSettings, saveSettings } from '../utils/storage';
 import { useCurrency } from '../utils/currencyContext';
 import { getCurrencySymbol } from '../utils/formatters';
 import { colors } from '../utils/colors';
-import { getAvailableSounds, playAlertSound } from '../utils/sound';
+import { getAvailableSounds, getAvailableVibrations, playAlertSound } from '../utils/sound';
 
 const CURRENCIES = [
   { code: 'usd', name: 'US Dollar', symbol: '$' },
@@ -35,10 +38,13 @@ export default function SettingsScreen({ navigation }) {
     refreshInterval: 30000,
     theme: 'light',
     notifications: true,
-    alertSound: 'vibration',
+    alertSound: 'none',
+    alertVibration: 'vibration',
   });
   const [showCurrencyModal, setShowCurrencyModal] = useState(false);
-  const [showSoundModal, setShowSoundModal] = useState(false);
+  const soundBottomSheetRef = useRef(null);
+  const vibrationBottomSheetRef = useRef(null);
+  const snapPoints = useMemo(() => ['75%', '90%'], []);
 
   useEffect(() => {
     loadUserSettings();
@@ -62,16 +68,96 @@ export default function SettingsScreen({ navigation }) {
 
   const handleSoundSelect = async (selectedSound) => {
     await updateSetting('alertSound', selectedSound);
-    setShowSoundModal(false);
+    soundBottomSheetRef.current?.close();
     // Test the sound when user selects it
-    await playAlertSound(selectedSound);
+    await playAlertSound(selectedSound, settings.alertVibration);
+  };
+
+  const handleVibrationSelect = async (selectedVibration) => {
+    await updateSetting('alertVibration', selectedVibration);
+    vibrationBottomSheetRef.current?.close();
+    // Test the vibration when user selects it
+    await playAlertSound(settings.alertSound === 'none' ? null : settings.alertSound, selectedVibration);
   };
 
   const testSound = async (soundId) => {
-    await playAlertSound(soundId);
+    await playAlertSound(soundId, settings.alertVibration);
   };
 
-  const availableSounds = useMemo(() => getAvailableSounds(), []);
+  const testVibration = async (vibrationId) => {
+    await playAlertSound(settings.alertSound === 'none' ? null : settings.alertSound, vibrationId);
+  };
+
+  const pickSoundFromDevice = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'audio/*',
+        copyToCacheDirectory: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const selectedFile = result.assets[0];
+        const fileUri = selectedFile.uri;
+        const fileName = selectedFile.name || 'Custom Sound';
+
+        // Save the file URI as the alert sound
+        await updateSetting('alertSound', fileUri);
+        await updateSetting('alertSoundName', fileName);
+        
+        soundBottomSheetRef.current?.close();
+        
+        // Test the selected sound
+        await playAlertSound(fileUri);
+        
+        Alert.alert('Success', `"${fileName}" selected as alert sound`);
+      }
+    } catch (error) {
+      console.error('Error picking sound file:', error);
+      Alert.alert('Error', 'Failed to pick sound file. Please try again.');
+    }
+  };
+
+  const availableVibrations = useMemo(() => {
+    return getAvailableVibrations();
+  }, []);
+
+  const availableSounds = useMemo(() => {
+    const sounds = getAvailableSounds();
+    const customSounds = [];
+    
+    // Add custom sound if one is selected
+    if (settings.alertSound && (settings.alertSound.startsWith('file://') || settings.alertSound.startsWith('content://'))) {
+      const customSoundName = settings.alertSoundName || 'Custom Sound';
+      customSounds.push({
+        id: settings.alertSound,
+        name: customSoundName,
+        type: 'custom',
+      });
+    }
+    
+    // Create organized list for sounds only
+    const organizedList = [];
+    
+    // Add "None" option for no sound
+    organizedList.push({ id: 'none', name: 'None', type: 'sound' });
+    
+    // Add default tones section
+    if (sounds.length > 0) {
+      organizedList.push({ id: 'header-tones', type: 'header', name: 'Sound Files' });
+      organizedList.push(...sounds);
+    }
+    
+    // Add custom sounds section
+    if (customSounds.length > 0) {
+      if (sounds.length > 0) {
+        organizedList.push({ id: 'separator-1', type: 'separator' });
+      }
+      organizedList.push({ id: 'header-custom', type: 'header', name: 'Custom Sounds' });
+      organizedList.push(...customSounds);
+    }
+    
+    return organizedList;
+  }, [settings.alertSound, settings.alertSoundName]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -92,6 +178,40 @@ export default function SettingsScreen({ navigation }) {
               trackColor={{ false: colors.border, true: colors.binanceYellow }}
               thumbColor={settings.notifications ? colors.background : colors.textSecondary}
             />
+          </View>
+
+          <View style={styles.settingItem}>
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>Alert Vibration</Text>
+              <Text style={styles.settingDescription}>
+                Choose vibration pattern for alerts
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.settingButton}
+              onPress={() => vibrationBottomSheetRef.current?.snapToIndex(0)}
+            >
+              <Text style={styles.settingButtonText}>
+                {availableVibrations.find(v => v.id === settings.alertVibration)?.name || 'Default Vibration'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.settingItem}>
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>Alert Sound</Text>
+              <Text style={styles.settingDescription}>
+                Choose alert sound file (optional)
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.settingButton}
+              onPress={() => soundBottomSheetRef.current?.snapToIndex(0)}
+            >
+              <Text style={styles.settingButtonText}>
+                {availableSounds.find(s => s.id === settings.alertSound)?.name || 'None'}
+              </Text>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.settingItem}>
@@ -178,27 +298,42 @@ export default function SettingsScreen({ navigation }) {
         </View>
       </Modal>
 
-      <Modal
-        visible={showSoundModal}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowSoundModal(false)}
+      <BottomSheet
+        ref={soundBottomSheetRef}
+        index={-1}
+        snapPoints={snapPoints}
+        enablePanDownToClose={true}
+        backgroundStyle={styles.bottomSheetBackground}
+        handleIndicatorStyle={styles.bottomSheetIndicator}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Alert Sound</Text>
-              <TouchableOpacity
-                onPress={() => setShowSoundModal(false)}
-                style={styles.closeButton}
-              >
-                <Text style={styles.closeButtonText}>✕</Text>
-              </TouchableOpacity>
-            </View>
-            <FlatList
-              data={availableSounds}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
+        <View style={styles.bottomSheetContent}>
+          <View style={styles.bottomSheetHeader}>
+            <Text style={styles.bottomSheetTitle}>Select Alert Sound</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.pickSoundButton}
+            onPress={pickSoundFromDevice}
+          >
+            <Text style={styles.pickSoundButtonText}>📁 Pick Sound from Device</Text>
+          </TouchableOpacity>
+          <BottomSheetFlatList
+            data={availableSounds}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.bottomSheetListContent}
+            renderItem={({ item }) => {
+              if (item.type === 'header') {
+                return (
+                  <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionHeaderText}>{item.name}</Text>
+                  </View>
+                );
+              }
+              
+              if (item.type === 'separator') {
+                return <View style={styles.sectionSeparator} />;
+              }
+              
+              return (
                 <TouchableOpacity
                   style={[
                     styles.currencyItem,
@@ -208,10 +343,10 @@ export default function SettingsScreen({ navigation }) {
                 >
                   <View style={styles.currencyInfo}>
                     <Text style={styles.currencyName}>
-                      {item.name} {item.type === 'vibration' ? '📳' : '🔊'}
+                      {item.name} {item.type === 'vibration' ? '📳' : item.type === 'custom' ? '📁' : '🔊'}
                     </Text>
                     <Text style={styles.currencyCode}>
-                      {item.type === 'vibration' ? 'Vibration Pattern' : 'Sound File'}
+                      {item.type === 'vibration' ? 'Vibration Pattern' : item.type === 'custom' ? 'Custom Sound File' : 'Default Tone'}
                     </Text>
                   </View>
                   <View style={styles.currencyRight}>
@@ -226,11 +361,60 @@ export default function SettingsScreen({ navigation }) {
                     )}
                   </View>
                 </TouchableOpacity>
-              )}
-            />
-          </View>
+              );
+            }}
+          />
         </View>
-      </Modal>
+      </BottomSheet>
+
+      <BottomSheet
+        ref={vibrationBottomSheetRef}
+        index={-1}
+        snapPoints={snapPoints}
+        enablePanDownToClose={true}
+        backgroundStyle={styles.bottomSheetBackground}
+        handleIndicatorStyle={styles.bottomSheetIndicator}
+      >
+        <View style={styles.bottomSheetContent}>
+          <View style={styles.bottomSheetHeader}>
+            <Text style={styles.bottomSheetTitle}>Select Vibration Pattern</Text>
+          </View>
+          <BottomSheetFlatList
+            data={availableVibrations}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.bottomSheetListContent}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[
+                  styles.currencyItem,
+                  settings.alertVibration === item.id && styles.currencyItemSelected,
+                ]}
+                onPress={() => handleVibrationSelect(item.id)}
+              >
+                <View style={styles.currencyInfo}>
+                  <Text style={styles.currencyName}>
+                    {item.name} 📳
+                  </Text>
+                  <Text style={styles.currencyCode}>
+                    Vibration Pattern
+                  </Text>
+                </View>
+                <View style={styles.currencyRight}>
+                  <TouchableOpacity
+                    style={styles.testButton}
+                    onPress={() => testVibration(item.id)}
+                  >
+                    <Text style={styles.testButtonText}>Test</Text>
+                  </TouchableOpacity>
+                  {settings.alertVibration === item.id && (
+                    <Text style={styles.checkmark}>✓</Text>
+                  )}
+                </View>
+              </TouchableOpacity>
+            )}
+          />
+        </View>
+      </BottomSheet>
     </SafeAreaView>
   );
 }
@@ -405,6 +589,65 @@ const styles = StyleSheet.create({
     color: colors.background,
     fontSize: 12,
     fontWeight: '600',
+  },
+  pickSoundButton: {
+    margin: 16,
+    padding: 16,
+    backgroundColor: colors.binanceYellow,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  pickSoundButtonText: {
+    color: colors.background,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  soundListContainer: {
+    flex: 1,
+    minHeight: 200,
+  },
+  sectionHeader: {
+    backgroundColor: colors.backgroundTertiary,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  sectionHeaderText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  sectionSeparator: {
+    height: 16,
+    backgroundColor: colors.backgroundTertiary,
+  },
+  bottomSheetBackground: {
+    backgroundColor: colors.backgroundSecondary,
+  },
+  bottomSheetIndicator: {
+    backgroundColor: colors.textSecondary,
+    width: 40,
+  },
+  bottomSheetContent: {
+    flex: 1,
+  },
+  bottomSheetHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  bottomSheetTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: colors.textPrimary,
+  },
+  bottomSheetListContent: {
+    paddingBottom: 20,
   },
 });
 

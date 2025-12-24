@@ -48,7 +48,8 @@ export const loadSettings = async () => {
       refreshInterval: 30000, // check prices every 30 seconds
       currency: 'usd',
       theme: 'light',
-      alertSound: 'vibration', // default sound option
+      alertSound: 'none', // default: no sound
+      alertVibration: 'vibration', // default vibration pattern
     };
   } catch (error) {
     console.error('Error loading settings:', error);
@@ -56,7 +57,8 @@ export const loadSettings = async () => {
       refreshInterval: 30000,
       currency: 'usd',
       theme: 'light',
-      alertSound: 'vibration',
+      alertSound: 'none',
+      alertVibration: 'vibration',
     };
   }
 };
