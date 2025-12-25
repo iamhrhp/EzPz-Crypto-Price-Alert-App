@@ -2,6 +2,21 @@
 
 A React Native mobile application for tracking cryptocurrency prices and setting price alerts using the CoinGecko API.
 
+![photo_2025-12-26_00-15-18](https://github.com/user-attachments/assets/1bdcdadc-fd82-43ac-befb-cb3d02865465)
+
+![photo_2025-12-26_00-15-22](https://github.com/user-attachments/assets/3a33008b-9aa1-4a44-ad83-cd415c58f4c6)
+
+![photo_2025-12-26_00-15-26](https://github.com/user-attachments/assets/7ffeebe1-99bd-49b0-8548-1d4aabc16e45)
+
+![photo_2025-12-26_00-15-29](https://github.com/user-attachments/assets/5676449b-07a7-44d0-8ad2-a493fb202f1b)
+
+![photo_2025-12-26_00-15-34](https://github.com/user-attachments/assets/e2e6a267-fc14-4414-8148-6cdad4514f55)
+
+![photo_2025-12-26_00-15-37](https://github.com/user-attachments/assets/d56378c4-71f3-4ea5-b127-b04efa334a52)
+
+![photo_2025-12-26_00-15-39](https://github.com/user-attachments/assets/1df722ff-6f3e-47e4-98c1-d04a7f04e1eb)
+
+
 ## Features
 
 - 📊 Real-time cryptocurrency price tracking
