@@ -1,9 +1,14 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { loadSettings, saveSettings } from './storage';
 
-const CurrencyContext = createContext();
+interface CurrencyContextType {
+  currency: string;
+  updateCurrency: (newCurrency: string) => Promise<void>;
+}
 
-export const useCurrency = () => {
+const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
+
+export const useCurrency = (): CurrencyContextType => {
   const context = useContext(CurrencyContext);
   if (!context) {
     throw new Error('useCurrency must be used within CurrencyProvider');
@@ -11,14 +16,18 @@ export const useCurrency = () => {
   return context;
 };
 
-export const CurrencyProvider = ({ children }) => {
-  const [currency, setCurrency] = useState('usd');
+interface CurrencyProviderProps {
+  children: ReactNode;
+}
+
+export const CurrencyProvider = ({ children }: CurrencyProviderProps) => {
+  const [currency, setCurrency] = useState<string>('usd');
 
   useEffect(() => {
     loadCurrency();
   }, []);
 
-  const loadCurrency = async () => {
+  const loadCurrency = async (): Promise<void> => {
     try {
       const settings = await loadSettings();
       if (settings.currency) {
@@ -29,7 +38,7 @@ export const CurrencyProvider = ({ children }) => {
     }
   };
 
-  const updateCurrency = async (newCurrency) => {
+  const updateCurrency = async (newCurrency: string): Promise<void> => {
     try {
       const settings = await loadSettings();
       const updatedSettings = { ...settings, currency: newCurrency.toLowerCase() };
@@ -46,6 +55,5 @@ export const CurrencyProvider = ({ children }) => {
     </CurrencyContext.Provider>
   );
 };
-
 
 

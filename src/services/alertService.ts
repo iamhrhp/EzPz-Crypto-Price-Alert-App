@@ -1,12 +1,16 @@
-import { getCryptoPrice } from '../api/coinGeckoApi';
-import { loadAlerts, saveAlerts } from '../utils/storage';
+import { getCryptoPrice, CryptoPrice } from '../api/coinGeckoApi';
+import { loadAlerts, saveAlerts, Alert } from '../utils/storage';
+
+export interface TriggeredAlert extends Alert {
+  currentPrice: number;
+}
 
 // Checks all active alerts to see if any prices hit their targets
 // Returns an array of alerts that just got triggered
-export const checkAlerts = async (currency = 'usd') => {
+export const checkAlerts = async (currency: string = 'usd'): Promise<TriggeredAlert[]> => {
   try {
     const alerts = await loadAlerts();
-    const activeAlerts = alerts.filter(alert => alert.active);
+    const activeAlerts = alerts.filter(alert => alert.isActive);
     
     if (activeAlerts.length === 0) {
       return [];
@@ -24,7 +28,7 @@ export const checkAlerts = async (currency = 'usd') => {
     );
     
     const priceResults = await Promise.all(pricePromises);
-    const triggeredAlerts = [];
+    const triggeredAlerts: TriggeredAlert[] = [];
     
     // Go through each alert and see if the price hit the target
     for (let i = 0; i < activeAlerts.length; i++) {
@@ -32,14 +36,16 @@ export const checkAlerts = async (currency = 'usd') => {
       const coinIndex = coinIds.indexOf(alert.coinId);
       
       if (coinIndex !== -1 && priceResults[coinIndex] && priceResults[coinIndex][alert.coinId]) {
-        const currentPrice = priceResults[coinIndex][alert.coinId][currency];
+        const priceData = priceResults[coinIndex][alert.coinId];
+        const currentPrice = priceData[currency] || priceData[currency.toLowerCase()];
         
-        // If current price is at or above the target, trigger the alert
-        if (currentPrice >= alert.targetPrice) {
-          // Only trigger if it hasn't been triggered already
-          if (!alert.triggered) {
-            alert.triggered = true;
-            alert.triggeredAt = new Date().toISOString();
+        if (currentPrice !== undefined) {
+          // Check if price condition is met
+          const conditionMet = alert.condition === 'above' 
+            ? currentPrice >= alert.targetPrice 
+            : currentPrice <= alert.targetPrice;
+          
+          if (conditionMet) {
             triggeredAlerts.push({
               ...alert,
               currentPrice,
@@ -47,11 +53,6 @@ export const checkAlerts = async (currency = 'usd') => {
           }
         }
       }
-    }
-    
-    // Save the updated alerts back to storage
-    if (triggeredAlerts.length > 0) {
-      await saveAlerts(alerts);
     }
     
     return triggeredAlerts;
@@ -63,17 +64,17 @@ export const checkAlerts = async (currency = 'usd') => {
 
 // Resets an alert so it can trigger again
 // Useful if you want to reuse an alert after it's been triggered
-export const resetAlert = async (alertId) => {
+export const resetAlert = async (alertId: string): Promise<void> => {
   try {
     const alerts = await loadAlerts();
     const alert = alerts.find(a => a.id === alertId);
     if (alert) {
-      alert.triggered = false;
-      alert.triggeredAt = null;
+      alert.isActive = false;
       await saveAlerts(alerts);
     }
   } catch (error) {
     console.error('Error resetting alert:', error);
   }
 };
+
 

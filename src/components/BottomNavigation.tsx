@@ -2,8 +2,21 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { colors } from '../utils/colors';
 
-const BottomNavigation = ({ navigation, currentRoute }) => {
-  const navItems = [
+interface NavItem {
+  id: string;
+  label: string;
+  icon: string;
+}
+
+interface BottomNavigationProps {
+  navigation: {
+    navigate: (route: string) => void;
+  };
+  currentRoute: string;
+}
+
+const BottomNavigation = ({ navigation, currentRoute }: BottomNavigationProps) => {
+  const navItems: NavItem[] = [
     { id: 'Home', label: 'Markets', icon: '📊' },
     { id: 'Alerts', label: 'Alerts', icon: '🔔' },
     { id: 'Settings', label: 'Settings', icon: '⚙️' },
@@ -69,6 +82,4 @@ const styles = StyleSheet.create({
 });
 
 export default BottomNavigation;
-
-
 

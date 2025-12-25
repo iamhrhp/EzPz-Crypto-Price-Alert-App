@@ -13,13 +13,19 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomSheet, { BottomSheetFlatList } from '@gorhom/bottom-sheet';
 import * as DocumentPicker from 'expo-document-picker';
-import { loadSettings, saveSettings } from '../utils/storage';
+import { loadSettings, saveSettings, Settings } from '../utils/storage';
 import { useCurrency } from '../utils/currencyContext';
 import { getCurrencySymbol } from '../utils/formatters';
 import { colors } from '../utils/colors';
-import { getAvailableSounds, getAvailableVibrations, playAlertSound } from '../utils/sound';
+import { getAvailableSounds, getAvailableVibrations, playAlertSound, SoundOption, VibrationOption } from '../utils/sound';
 
-const CURRENCIES = [
+interface Currency {
+  code: string;
+  name: string;
+  symbol: string;
+}
+
+const CURRENCIES: Currency[] = [
   { code: 'usd', name: 'US Dollar', symbol: '$' },
   { code: 'inr', name: 'Indian Rupee', symbol: '₹' },
   { code: 'eur', name: 'Euro', symbol: '€' },
@@ -32,63 +38,69 @@ const CURRENCIES = [
   { code: 'sgd', name: 'Singapore Dollar', symbol: 'S$' },
 ];
 
-export default function SettingsScreen({ navigation }) {
+interface SoundListItem {
+  id: string;
+  name: string;
+  type: 'sound' | 'custom' | 'header' | 'separator';
+}
+
+export default function SettingsScreen() {
   const { currency, updateCurrency } = useCurrency();
-  const [settings, setSettings] = useState({
+  const [settings, setSettings] = useState<Settings & { alertSoundName?: string }>({
     refreshInterval: 30000,
     theme: 'light',
     notifications: true,
     alertSound: 'none',
     alertVibration: 'vibration',
   });
-  const [showCurrencyModal, setShowCurrencyModal] = useState(false);
-  const soundBottomSheetRef = useRef(null);
-  const vibrationBottomSheetRef = useRef(null);
+  const [showCurrencyModal, setShowCurrencyModal] = useState<boolean>(false);
+  const soundBottomSheetRef = useRef<BottomSheet>(null);
+  const vibrationBottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ['75%', '90%'], []);
 
   useEffect(() => {
     loadUserSettings();
   }, []);
 
-  const loadUserSettings = async () => {
+  const loadUserSettings = async (): Promise<void> => {
     const savedSettings = await loadSettings();
     setSettings({ ...settings, ...savedSettings });
   };
 
-  const updateSetting = async (key, value) => {
+  const updateSetting = async (key: keyof Settings, value: string | number | boolean): Promise<void> => {
     const newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
     await saveSettings(newSettings);
   };
 
-  const handleCurrencySelect = async (selectedCurrency) => {
+  const handleCurrencySelect = async (selectedCurrency: string): Promise<void> => {
     await updateCurrency(selectedCurrency);
     setShowCurrencyModal(false);
   };
 
-  const handleSoundSelect = async (selectedSound) => {
+  const handleSoundSelect = async (selectedSound: string): Promise<void> => {
     await updateSetting('alertSound', selectedSound);
     soundBottomSheetRef.current?.close();
     // Test the sound when user selects it
     await playAlertSound(selectedSound, settings.alertVibration);
   };
 
-  const handleVibrationSelect = async (selectedVibration) => {
+  const handleVibrationSelect = async (selectedVibration: string): Promise<void> => {
     await updateSetting('alertVibration', selectedVibration);
     vibrationBottomSheetRef.current?.close();
     // Test the vibration when user selects it
     await playAlertSound(settings.alertSound === 'none' ? null : settings.alertSound, selectedVibration);
   };
 
-  const testSound = async (soundId) => {
+  const testSound = async (soundId: string): Promise<void> => {
     await playAlertSound(soundId, settings.alertVibration);
   };
 
-  const testVibration = async (vibrationId) => {
+  const testVibration = async (vibrationId: string): Promise<void> => {
     await playAlertSound(settings.alertSound === 'none' ? null : settings.alertSound, vibrationId);
   };
 
-  const pickSoundFromDevice = async () => {
+  const pickSoundFromDevice = async (): Promise<void> => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: 'audio/*',
@@ -102,12 +114,12 @@ export default function SettingsScreen({ navigation }) {
 
         // Save the file URI as the alert sound
         await updateSetting('alertSound', fileUri);
-        await updateSetting('alertSoundName', fileName);
+        setSettings(prev => ({ ...prev, alertSoundName: fileName }));
         
         soundBottomSheetRef.current?.close();
         
         // Test the selected sound
-        await playAlertSound(fileUri);
+        await playAlertSound(fileUri, settings.alertVibration);
         
         Alert.alert('Success', `"${fileName}" selected as alert sound`);
       }
@@ -121,9 +133,9 @@ export default function SettingsScreen({ navigation }) {
     return getAvailableVibrations();
   }, []);
 
-  const availableSounds = useMemo(() => {
+  const availableSounds = useMemo((): SoundListItem[] => {
     const sounds = getAvailableSounds();
-    const customSounds = [];
+    const customSounds: SoundOption[] = [];
     
     // Add custom sound if one is selected
     if (settings.alertSound && (settings.alertSound.startsWith('file://') || settings.alertSound.startsWith('content://'))) {
@@ -136,7 +148,7 @@ export default function SettingsScreen({ navigation }) {
     }
     
     // Create organized list for sounds only
-    const organizedList = [];
+    const organizedList: SoundListItem[] = [];
     
     // Add "None" option for no sound
     organizedList.push({ id: 'none', name: 'None', type: 'sound' });
@@ -144,7 +156,7 @@ export default function SettingsScreen({ navigation }) {
     // Add default tones section
     if (sounds.length > 0) {
       organizedList.push({ id: 'header-tones', type: 'header', name: 'Sound Files' });
-      organizedList.push(...sounds);
+      organizedList.push(...sounds.map(s => ({ ...s, type: s.type as 'sound' | 'custom' })));
     }
     
     // Add custom sounds section
@@ -153,7 +165,7 @@ export default function SettingsScreen({ navigation }) {
         organizedList.push({ id: 'separator-1', type: 'separator' });
       }
       organizedList.push({ id: 'header-custom', type: 'header', name: 'Custom Sounds' });
-      organizedList.push(...customSounds);
+      organizedList.push(...customSounds.map(s => ({ ...s, type: s.type as 'sound' | 'custom' })));
     }
     
     return organizedList;
@@ -343,10 +355,10 @@ export default function SettingsScreen({ navigation }) {
                 >
                   <View style={styles.currencyInfo}>
                     <Text style={styles.currencyName}>
-                      {item.name} {item.type === 'vibration' ? '📳' : item.type === 'custom' ? '📁' : '🔊'}
+                      {item.name} {item.type === 'custom' ? '📁' : '🔊'}
                     </Text>
                     <Text style={styles.currencyCode}>
-                      {item.type === 'vibration' ? 'Vibration Pattern' : item.type === 'custom' ? 'Custom Sound File' : 'Default Tone'}
+                      {item.type === 'custom' ? 'Custom Sound File' : 'Sound File'}
                     </Text>
                   </View>
                   <View style={styles.currencyRight}>

@@ -27,7 +27,6 @@ export const colors = {
   buttonPrimary: '#F0B90B',
   buttonSecondary: '#1E2329',
   buttonHover: '#C99400',
-};
-
+} as const;
 
 

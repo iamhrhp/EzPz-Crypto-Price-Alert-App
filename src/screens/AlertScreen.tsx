@@ -8,25 +8,34 @@ import {
   TextInput,
   Alert,
   AppState,
+  AppStateStatus,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRoute, RouteProp } from '@react-navigation/native';
 import { getCryptoPrice } from '../api/coinGeckoApi';
-import { loadAlerts, saveAlerts } from '../utils/storage';
+import { loadAlerts, saveAlerts, Alert as AlertType } from '../utils/storage';
 import { formatCurrency } from '../utils/formatters';
 import { useCurrency } from '../utils/currencyContext';
 import { colors } from '../utils/colors';
 import { checkAlerts } from '../services/alertService';
 import { playAlertSound } from '../utils/sound';
 
-export default function AlertScreen({ navigation, route }) {
+type RootStackParamList = {
+  Alerts: { coinId?: string };
+};
+
+type AlertScreenRouteProp = RouteProp<RootStackParamList, 'Alerts'>;
+
+export default function AlertScreen() {
+  const route = useRoute<AlertScreenRouteProp>();
   const { currency } = useCurrency();
-  const [alerts, setAlerts] = useState([]);
-  const [coinId, setCoinId] = useState(route?.params?.coinId || 'bitcoin');
-  const [targetPrice, setTargetPrice] = useState('');
-  const [currentPrice, setCurrentPrice] = useState(null);
-  const alertCheckInterval = useRef(null);
-  const appState = useRef(AppState.currentState);
-  const lastTriggeredAlerts = useRef(new Set());
+  const [alerts, setAlerts] = useState<AlertType[]>([]);
+  const [coinId, setCoinId] = useState<string>(route?.params?.coinId || 'bitcoin');
+  const [targetPrice, setTargetPrice] = useState<string>('');
+  const [currentPrice, setCurrentPrice] = useState<number | null>(null);
+  const alertCheckInterval = useRef<NodeJS.Timeout | null>(null);
+  const appState = useRef<AppStateStatus>(AppState.currentState);
+  const lastTriggeredAlerts = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     loadUserAlerts();
@@ -34,7 +43,7 @@ export default function AlertScreen({ navigation, route }) {
     startAlertChecking();
 
     // Check alerts when user comes back to the app
-    const subscription = AppState.addEventListener('change', nextAppState => {
+    const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
       if (
         appState.current.match(/inactive|background/) &&
         nextAppState === 'active'
@@ -95,7 +104,7 @@ export default function AlertScreen({ navigation, route }) {
     }
   }, [currency]);
 
-  const startAlertChecking = () => {
+  const startAlertChecking = (): void => {
     alertCheckInterval.current = setInterval(() => {
       checkAlertsAndPlaySound();
     }, 5000);
@@ -103,7 +112,7 @@ export default function AlertScreen({ navigation, route }) {
     checkAlertsAndPlaySound();
   };
 
-  const stopAlertChecking = () => {
+  const stopAlertChecking = (): void => {
     if (alertCheckInterval.current) {
       clearInterval(alertCheckInterval.current);
       alertCheckInterval.current = null;
@@ -119,34 +128,41 @@ export default function AlertScreen({ navigation, route }) {
     return () => clearInterval(refreshInterval);
   }, []);
 
-  const loadUserAlerts = async () => {
+  const loadUserAlerts = async (): Promise<void> => {
     const savedAlerts = await loadAlerts();
     setAlerts(savedAlerts);
   };
 
-  const fetchCurrentPrice = async () => {
+  const fetchCurrentPrice = async (): Promise<void> => {
     try {
       const data = await getCryptoPrice(coinId, currency);
       if (data[coinId]) {
-        setCurrentPrice(data[coinId][currency]);
+        const priceData = data[coinId];
+        const price = priceData[currency] || priceData[currency.toLowerCase()];
+        if (price !== undefined) {
+          setCurrentPrice(price);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch current price:', error);
     }
   };
 
-  const addAlert = async () => {
+  const addAlert = async (): Promise<void> => {
     if (!targetPrice || isNaN(parseFloat(targetPrice))) {
       Alert.alert('Invalid Input', 'Please enter a valid target price');
       return;
     }
 
-    const newAlert = {
+    const newAlert: AlertType = {
       id: Date.now().toString(),
       coinId: coinId,
+      coinName: coinId,
+      coinSymbol: coinId.toUpperCase(),
       targetPrice: parseFloat(targetPrice),
-      createdAt: new Date().toISOString(),
-      active: true,
+      condition: 'above',
+      isActive: true,
+      createdAt: Date.now(),
     };
 
     const updatedAlerts = [...alerts, newAlert];
@@ -156,7 +172,7 @@ export default function AlertScreen({ navigation, route }) {
     Alert.alert('Success', 'Price alert created successfully!');
   };
 
-  const removeAlert = async (alertId) => {
+  const removeAlert = async (alertId: string): Promise<void> => {
     Alert.alert(
       'Remove Alert',
       'Are you sure you want to remove this alert?',
@@ -177,7 +193,7 @@ export default function AlertScreen({ navigation, route }) {
 
   // Figures out how much to increment/decrement based on the price
   // If it's 0.11, step by 0.01. If it's 88001, step by 1.
-  const getStepSize = (price) => {
+  const getStepSize = (price: number | null): number => {
     if (!price) return 1;
     const priceStr = price.toString();
     if (priceStr.includes('.')) {
@@ -188,18 +204,18 @@ export default function AlertScreen({ navigation, route }) {
     return 1; // whole numbers, step by 1
   };
 
-  const incrementPrice = () => {
+  const incrementPrice = (): void => {
     const current = parseFloat(targetPrice) || currentPrice || 0;
-    const stepSize = getStepSize(targetPrice || currentPrice);
+    const stepSize = getStepSize(parseFloat(targetPrice) || currentPrice);
     const newPrice = current + stepSize;
     // keep the same number of decimal places
     const decimalPlaces = stepSize.toString().split('.')[1]?.length || 0;
     setTargetPrice(newPrice.toFixed(decimalPlaces));
   };
 
-  const decrementPrice = () => {
+  const decrementPrice = (): void => {
     const current = parseFloat(targetPrice) || currentPrice || 0;
-    const stepSize = getStepSize(targetPrice || currentPrice);
+    const stepSize = getStepSize(parseFloat(targetPrice) || currentPrice);
     const newPrice = Math.max(0, current - stepSize);
     // keep the same number of decimal places
     const decimalPlaces = stepSize.toString().split('.')[1]?.length || 0;
@@ -279,30 +295,17 @@ export default function AlertScreen({ navigation, route }) {
           alerts.map((alert) => (
             <View 
               key={alert.id} 
-              style={[
-                styles.alertCard,
-                alert.triggered && styles.alertCardTriggered
-              ]}
+              style={styles.alertCard}
             >
               <View style={styles.alertInfo}>
                 <View style={styles.alertHeader}>
                   <Text style={styles.alertCoin}>
                     {alert.coinId.toUpperCase()}
                   </Text>
-                  {alert.triggered && (
-                    <View style={styles.triggeredBadge}>
-                      <Text style={styles.triggeredBadgeText}>🎯 TRIGGERED</Text>
-                    </View>
-                  )}
                 </View>
                 <Text style={styles.alertPrice}>
                   Target: {formatCurrency(alert.targetPrice, currency)}
                 </Text>
-                {alert.triggered && alert.triggeredAt && (
-                  <Text style={styles.triggeredDate}>
-                    Triggered: {new Date(alert.triggeredAt).toLocaleString()}
-                  </Text>
-                )}
                 <Text style={styles.alertDate}>
                   Created: {new Date(alert.createdAt).toLocaleDateString()}
                 </Text>

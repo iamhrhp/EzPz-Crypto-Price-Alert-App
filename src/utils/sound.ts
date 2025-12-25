@@ -1,19 +1,20 @@
 import { Vibration } from 'react-native';
 import { Asset } from 'expo-asset';
+import { Audio } from 'expo-av';
 import { loadSettings } from './storage';
 
-let soundObject = null;
+type SoundObject = Audio.Sound | null;
+
+let soundObject: SoundObject = null;
 
 // Different vibration patterns users can choose from
-const VIBRATION_PATTERNS = {
+const VIBRATION_PATTERNS: Record<string, number[]> = {
   'vibration': [200, 100, 200, 100, 200], // default: short bursts
   'vibration-strong': [300, 150, 300, 150, 300], // longer, stronger
   'vibration-double': [200, 50, 200, 50, 200, 50, 200], // double pattern
   'vibration-single': [500], // one long vibration
   'vibration-quick': [100, 50, 100, 50, 100], // quick bursts
 };
-
-
 
 // Default sound files bundled with the app
 // 
@@ -28,7 +29,7 @@ const VIBRATION_PATTERNS = {
 //   2. Add to SOUND_FILES: 'my-alert': require('../assets/my-alert.mp3'),
 //   3. Add to SOUND_NAMES: 'my-alert': 'My Alert Tone',
 //
-const SOUND_FILES = {
+const SOUND_FILES: Record<string, number> = {
   'alert-1': require('../../assets/Alert1.mp3'),
   'alert-2': require('../../assets/Alert2.mp3'),
   'alert-3': require('../../assets/Alert3.mp3'),
@@ -39,7 +40,7 @@ const SOUND_FILES = {
 
 // Friendly display names for default sounds
 // If a sound isn't listed here, it will use a formatted version of the key name
-const SOUND_NAMES = {
+const SOUND_NAMES: Record<string, string> = {
   'alert-1': 'Alert 1',
   'alert-2': 'Alert 2',
   'alert-3': 'Alert 3',
@@ -48,8 +49,20 @@ const SOUND_NAMES = {
   'alert-6': 'Alert 6',
 };
 
+export interface SoundOption {
+  id: string;
+  name: string;
+  type: 'vibration' | 'sound' | 'custom';
+}
+
+export interface VibrationOption {
+  id: string;
+  name: string;
+  type: 'vibration';
+}
+
 // Plays the alert sound and vibration based on user's preference
-export const playAlertSound = async (soundType = null, vibrationType = null) => {
+export const playAlertSound = async (soundType: string | null = null, vibrationType: string | null = null): Promise<void> => {
   try {
     const settings = await loadSettings();
     
@@ -70,8 +83,6 @@ export const playAlertSound = async (soundType = null, vibrationType = null) => 
     // Check if it's a custom file URI (starts with file:// or content://)
     if (selectedSound.startsWith('file://') || selectedSound.startsWith('content://')) {
       try {
-        const { Audio } = await import('expo-av');
-        
         await Audio.requestPermissionsAsync();
         await Audio.setAudioModeAsync({
           playsInSilentModeIOS: true,
@@ -100,8 +111,6 @@ export const playAlertSound = async (soundType = null, vibrationType = null) => 
     // Check if it's a bundled sound file
     if (SOUND_FILES[selectedSound]) {
       try {
-        const { Audio } = await import('expo-av');
-        
         await Audio.requestPermissionsAsync();
         await Audio.setAudioModeAsync({
           playsInSilentModeIOS: true,
@@ -137,32 +146,32 @@ export const playAlertSound = async (soundType = null, vibrationType = null) => 
 };
 
 // Get list of available vibration patterns
-export const getAvailableVibrations = () => {
+export const getAvailableVibrations = (): VibrationOption[] => {
   try {
     return Object.keys(VIBRATION_PATTERNS || {}).map(key => ({
       id: key,
       name: key.replace('vibration-', '').replace('vibration', 'Default Vibration'),
-      type: 'vibration',
+      type: 'vibration' as const,
     }));
   } catch (error) {
     console.error('Error getting available vibrations:', error);
     return [{
       id: 'vibration',
       name: 'Default Vibration',
-      type: 'vibration',
+      type: 'vibration' as const,
     }];
   }
 };
 
 // Get list of available sound files
-export const getAvailableSounds = () => {
+export const getAvailableSounds = (): SoundOption[] => {
   try {
     const soundOptions = Object.keys(SOUND_FILES || {}).map(key => ({
       id: key,
       name: SOUND_NAMES[key] || key.split('-').map(word => 
         word.charAt(0).toUpperCase() + word.slice(1)
       ).join(' '),
-      type: 'sound',
+      type: 'sound' as const,
     }));
 
     return soundOptions;
@@ -173,7 +182,7 @@ export const getAvailableSounds = () => {
 };
 
 // Stops any ongoing sound or vibration
-export const stopAlertSound = async () => {
+export const stopAlertSound = async (): Promise<void> => {
   try {
     if (soundObject) {
       await soundObject.stopAsync();
@@ -185,4 +194,5 @@ export const stopAlertSound = async () => {
     console.error('Error stopping alert sound:', error);
   }
 };
+
 

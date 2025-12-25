@@ -2,8 +2,14 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { formatCurrency, formatPercentage, getChangeColor } from '../utils/formatters';
 import { colors } from '../utils/colors';
+import { CryptoMarketData } from '../api/coinGeckoApi';
 
-export default function CryptoCard({ crypto, onPress }) {
+interface CryptoCardProps {
+  crypto: CryptoMarketData | { name: string; symbol: string; current_price?: number; usd?: number; price_change_percentage_24h?: number; market_cap?: number } | null;
+  onPress: () => void;
+}
+
+export default function CryptoCard({ crypto, onPress }: CryptoCardProps) {
   if (!crypto) return null;
 
   return (
@@ -17,7 +23,7 @@ export default function CryptoCard({ crypto, onPress }) {
         </View>
         <View style={styles.priceContainer}>
           <Text style={styles.price}>
-            {formatCurrency(crypto.current_price || crypto.usd)}
+            {formatCurrency(crypto.current_price || (crypto as any).usd)}
           </Text>
           {crypto.price_change_percentage_24h !== undefined && (
             <Text
@@ -96,4 +102,5 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
 });
+
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useCallback } from 'react';
-import { AppState, Alert } from 'react-native';
+import { AppState, Alert as RNAlert, AppStateStatus } from 'react-native';
 import { useCurrency } from '../utils/currencyContext';
 import { checkAlerts } from '../services/alertService';
 import { playAlertSound } from '../utils/sound';
@@ -11,9 +11,9 @@ import { formatCurrency } from '../utils/formatters';
  */
 export default function AlertMonitor() {
   const { currency } = useCurrency();
-  const alertCheckInterval = useRef(null);
-  const appState = useRef(AppState.currentState);
-  const lastTriggeredAlerts = useRef(new Set());
+  const alertCheckInterval = useRef<NodeJS.Timeout | null>(null);
+  const appState = useRef<AppStateStatus>(AppState.currentState);
+  const lastTriggeredAlerts = useRef<Set<string>>(new Set());
 
   const checkAlertsAndPlaySound = useCallback(async () => {
     try {
@@ -34,7 +34,7 @@ export default function AlertMonitor() {
           await playAlertSound();
           
           // Show alert notification
-          Alert.alert(
+          RNAlert.alert(
             '🎯 Price Alert Triggered!',
             `${alert.coinId.toUpperCase()} has reached your target price!\n\n` +
             `Target: ${formatCurrency(alert.targetPrice, currency)}\n` +
@@ -64,7 +64,7 @@ export default function AlertMonitor() {
     checkAlertsAndPlaySound();
 
     // Listen for app state changes
-    const subscription = AppState.addEventListener('change', nextAppState => {
+    const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
       if (
         appState.current.match(/inactive|background/) &&
         nextAppState === 'active'

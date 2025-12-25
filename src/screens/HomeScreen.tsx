@@ -9,22 +9,33 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getPopularCryptos } from '../api/coinGeckoApi';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { getPopularCryptos, CryptoMarketData } from '../api/coinGeckoApi';
 import { formatCurrency, formatPercentage, getChangeColor } from '../utils/formatters';
 import { useCurrency } from '../utils/currencyContext';
 import { colors } from '../utils/colors';
 
-export default function HomeScreen({ navigation }) {
+type RootStackParamList = {
+  Home: undefined;
+  Alerts: { coinId?: string };
+  Settings: undefined;
+};
+
+type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
+
+export default function HomeScreen() {
+  const navigation = useNavigation<HomeScreenNavigationProp>();
   const { currency } = useCurrency();
-  const [cryptos, setCryptos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [cryptos, setCryptos] = useState<CryptoMarketData[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
 
   useEffect(() => {
     loadCryptoPrices();
   }, [currency]);
 
-  const loadCryptoPrices = async () => {
+  const loadCryptoPrices = async (): Promise<void> => {
     try {
       setLoading(true);
       const data = await getPopularCryptos(10, currency);
@@ -37,7 +48,7 @@ export default function HomeScreen({ navigation }) {
     }
   };
 
-  const onRefresh = () => {
+  const onRefresh = (): void => {
     setRefreshing(true);
     loadCryptoPrices();
   };
@@ -214,4 +225,5 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 });
+
 

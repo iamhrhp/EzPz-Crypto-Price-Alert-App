@@ -1,6 +1,6 @@
 // Maps currency codes to locale strings for proper number formatting
-const getLocaleForCurrency = (currency) => {
-  const currencyMap = {
+const getLocaleForCurrency = (currency: string): string => {
+  const currencyMap: Record<string, string> = {
     'USD': 'en-US',
     'EUR': 'de-DE',
     'GBP': 'en-GB',
@@ -17,7 +17,7 @@ const getLocaleForCurrency = (currency) => {
 
 // Formats a number as currency (e.g., $1,234.56 or €1.234,56)
 // Handles different locales automatically based on currency
-export const formatCurrency = (value, currency = 'USD') => {
+export const formatCurrency = (value: number | null | undefined, currency: string = 'USD'): string => {
   if (value === null || value === undefined || isNaN(value)) {
     const symbol = getCurrencySymbol(currency);
     return `${symbol}0.00`;
@@ -35,8 +35,8 @@ export const formatCurrency = (value, currency = 'USD') => {
 };
 
 // Returns the symbol for a currency ($, €, £, etc.)
-export const getCurrencySymbol = (currency) => {
-  const symbols = {
+export const getCurrencySymbol = (currency: string): string => {
+  const symbols: Record<string, string> = {
     'USD': '$',
     'EUR': '€',
     'GBP': '£',
@@ -52,7 +52,7 @@ export const getCurrencySymbol = (currency) => {
 };
 
 // Formats percentage with + or - sign (e.g., +5.23% or -2.10%)
-export const formatPercentage = (change) => {
+export const formatPercentage = (change: number | null | undefined): string => {
   if (change === null || change === undefined || isNaN(change)) {
     return '0.00%';
   }
@@ -63,7 +63,7 @@ export const formatPercentage = (change) => {
 
 // Shortens big numbers (1.5B instead of 1,500,000,000)
 // Useful for market cap and volume displays
-export const formatLargeNumber = (value, currency = 'USD') => {
+export const formatLargeNumber = (value: number | null | undefined, currency: string = 'USD'): string => {
   if (value === null || value === undefined || isNaN(value)) {
     return '0';
   }
@@ -88,10 +88,11 @@ export const formatLargeNumber = (value, currency = 'USD') => {
 
 // Returns green for positive changes, red for negative
 // Matches Binance's color scheme
-export const getChangeColor = (change) => {
+export const getChangeColor = (change: number | null | undefined): string => {
   if (change === null || change === undefined || isNaN(change)) {
     return '#848E9C';
   }
   return change >= 0 ? '#0ECB81' : '#F6465D';
 };
+
 
