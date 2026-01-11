@@ -1,20 +1,16 @@
 # Ezpz Crypto Price Alert
 
 A React Native mobile application for tracking cryptocurrency prices and setting price alerts using the CoinGecko API.
+<img width="1206" height="2622" alt="Simulator Screenshot - iPhone 16 Pro - 2026-01-12 at 01 20 42" src="https://github.com/user-attachments/assets/4b31f71c-8fb2-4706-a82a-f0d5f02203c7" />
+<img width="300" height="650" alt="Simulator Screenshot - iPhone 16 Pro - 2026-01-12 at 01 19 05" src="https://github.com/user-attachments/assets/9d3d371b-0493-491a-b257-d80ae871fe9e" />
+<img width="300" height="650" alt="Simulator Screenshot - iPhone 16 Pro - 2026-01-12 at 01 18 59" src="https://github.com/user-attachments/assets/d7f708b2-8f0f-4cf3-bf09-7c62af72d11a" />
+<img width="300" height="650" alt="Simulator Screenshot - iPhone 16 Pro - 2026-01-12 at 01 18 50" src="https://github.com/user-attachments/assets/6fb6ca5f-9ade-441e-b8f0-fe98e34f69ba" />
+<img width="300" height="650" alt="Simulator Screenshot - iPhone 16 Pro - 2026-01-12 at 01 18 42" src="https://github.com/user-attachments/assets/bbc70f15-b411-4d7a-a82f-286454984533" />
+<img width="300" height="650" alt="Simulator Screenshot - iPhone 16 Pro - 2026-01-12 at 01 18 32" src="https://github.com/user-attachments/assets/81cadfbb-6b86-4a09-8674-87608a586a5d" />
+<img width="300" height="650" alt="Simulator Screenshot - iPhone 16 Pro - 2026-01-12 at 01 18 28" src="https://github.com/user-attachments/assets/4501dcf7-b88a-498a-9c28-790fdfa3d26f" />
+<img width="300" height="650" alt="Simulator Screenshot - iPhone 16 Pro - 2026-01-12 at 01 18 21" src="https://github.com/user-attachments/assets/919788d8-140b-4c64-b3bc-63c33f64cc76" />
 
-![photo_2025-12-26_00-15-18](https://github.com/user-attachments/assets/1bdcdadc-fd82-43ac-befb-cb3d02865465)
 
-![photo_2025-12-26_00-15-22](https://github.com/user-attachments/assets/3a33008b-9aa1-4a44-ad83-cd415c58f4c6)
-
-![photo_2025-12-26_00-15-26](https://github.com/user-attachments/assets/7ffeebe1-99bd-49b0-8548-1d4aabc16e45)
-
-![photo_2025-12-26_00-15-29](https://github.com/user-attachments/assets/5676449b-07a7-44d0-8ad2-a493fb202f1b)
-
-![photo_2025-12-26_00-15-34](https://github.com/user-attachments/assets/e2e6a267-fc14-4414-8148-6cdad4514f55)
-
-![photo_2025-12-26_00-15-37](https://github.com/user-attachments/assets/d56378c4-71f3-4ea5-b127-b04efa334a52)
-
-![photo_2025-12-26_00-15-39](https://github.com/user-attachments/assets/1df722ff-6f3e-47e4-98c1-d04a7f04e1eb)
 
 
 ## Features
